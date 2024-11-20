@@ -21,7 +21,7 @@ export function OrgSwitcher() {
         const fetchData = async () => {
             const allOrgs = await getOrganizationsCurrUser();
             setOrgs(allOrgs);
-            const activeOrgId = localStorage.getItem("organization");
+            const activeOrgId = localStorage.getItem("organization")?.replace(/"/g, "");
             const myactiveOrg = allOrgs.filter((org) => org._id === activeOrgId);
             setActiveOrg(myactiveOrg[0]);
             console.log(allOrgs);

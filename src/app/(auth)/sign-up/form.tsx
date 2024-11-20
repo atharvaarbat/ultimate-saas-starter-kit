@@ -6,9 +6,10 @@ import { Button } from "@/components/ui/button";
 
 import { signup } from "@/server/action/auth";
 import { useFormState } from 'react-dom';
+import { useActionState } from "react";
 
 export function SignupForm() {
-  const [ state, action, pending ] = useFormState(signup, undefined);
+  const [ state, action, pending ] = useActionState(signup, undefined);
 
   return (
     <form action={action} >

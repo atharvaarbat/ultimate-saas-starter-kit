@@ -3,12 +3,12 @@
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import React from "react";
+import React, { useActionState } from "react";
 import { login } from "@/server/action/auth";
 import { useFormState } from 'react-dom';
 
 export function LoginForm() {
-  const [state, action, pending ] = useFormState(login, undefined);
+  const [state, action, pending ] = useActionState(login, undefined);
 
   return (
     <form action={action}>

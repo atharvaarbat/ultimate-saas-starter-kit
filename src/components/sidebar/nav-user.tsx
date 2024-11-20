@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/sidebar"
 import { getCuurentUser } from "@/server/action/auth"
 import { useEffect, useState } from "react"
+import Link from "next/link"
 
 
 export function NavUser() {
@@ -83,17 +84,16 @@ export function NavUser() {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem><Sparkles />Upgrade to Pro
-              </DropdownMenuItem>
+              <DropdownMenuItem><Sparkles />Upgrade to Pro</DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem><BadgeCheck />Account
-              </DropdownMenuItem>
-              <DropdownMenuItem><CreditCard />Billing
-              </DropdownMenuItem>
-              <DropdownMenuItem><Bell />Notifications
-              </DropdownMenuItem>
+              <Link href={"/settings"}>
+                <DropdownMenuItem><BadgeCheck />Account</DropdownMenuItem>
+              </Link>
+
+              <DropdownMenuItem><CreditCard />Billing</DropdownMenuItem>
+              <DropdownMenuItem><Bell />Notifications</DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem><LogOut />Log out

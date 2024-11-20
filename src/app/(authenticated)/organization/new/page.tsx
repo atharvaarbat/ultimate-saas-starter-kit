@@ -105,7 +105,7 @@ export default function CreateOrganizationPage() {
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen p-4">
+    <div className="flex justify-center items-center p-4">
       <Card className="w-full max-w-md bg-background-secondary">
         <CardHeader>
           <CardTitle>Create New Organization</CardTitle>
