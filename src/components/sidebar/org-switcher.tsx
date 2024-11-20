@@ -39,7 +39,7 @@ export function OrgSwitcher() {
                         >
                             <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
 
-                                <img src={activeOrg.logo} alt={activeOrg.name} width={40} height={40} className="border-none rounded-md" />
+                                <img src={activeOrg.logo ? activeOrg.logo : undefined} alt={activeOrg.name} width={40} height={40} className="border-none rounded-md" />
                             </div>
                             <div className="grid flex-1 text-left text-sm leading-tight">
                                 <span className="truncate font-semibold">
@@ -69,7 +69,7 @@ export function OrgSwitcher() {
                                 className="gap-2 p-2"
                             >
                                 <div className="flex size-6 items-center justify-center rounded-sm border overflow-hidden">
-                                    <img src={org.logo} width={40} height={40} className="" />
+                                    <img src={org.logo ? org.logo : undefined} width={40} height={40} className="" />
 
                                 </div>
                                 {org.name}
