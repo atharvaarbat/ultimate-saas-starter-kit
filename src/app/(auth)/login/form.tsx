@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import React, { useActionState } from "react";
 import { login } from "@/server/action/auth";
 import { useFormState } from 'react-dom';
+import Link from "next/link";
 
 export function LoginForm() {
   const [state, action, pending ] = useActionState(login, undefined);
@@ -23,12 +24,17 @@ export function LoginForm() {
         )}
         <div>
           <Label htmlFor="password">Password</Label>
-          <Input id="password" name="password" type="password" />
+          <Input id="password" name="password" type="password" placeholder="●●●●●●"/>
         </div>
         
         <Button aria-disabled={pending} type="submit" className="mt-2 w-full">
           {pending ? "Submitting..." : "Login"}
         </Button>
+        <Link href={'/sign-up'}>
+          <Button aria-disabled={pending} variant='ghost' className="mt-2 w-full font-bold">
+            Create an account
+          </Button>
+        </Link>
       </div>
     </form>
   );

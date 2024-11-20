@@ -7,9 +7,10 @@ import { Button } from "@/components/ui/button";
 import { signup } from "@/server/action/auth";
 import { useFormState } from 'react-dom';
 import { useActionState } from "react";
+import Link from "next/link";
 
 export function SignupForm() {
-  const [ state, action, pending ] = useActionState(signup, undefined);
+  const [state, action, pending] = useActionState(signup, undefined);
 
   return (
     <form action={action} >
@@ -30,7 +31,7 @@ export function SignupForm() {
         )}
         <div>
           <Label htmlFor="password">Password</Label>
-          <Input id="password" name="password" type="password" />
+          <Input id="password" name="password" type="password" placeholder="●●●●●●" />
         </div>
         {state?.errors?.password && (
           <div className="text-sm text-red-500">
@@ -45,6 +46,12 @@ export function SignupForm() {
         <Button aria-disabled={pending} type="submit" className="mt-2 w-full">
           {pending ? "Submitting..." : "Signup"}
         </Button>
+        <Link href={'/login'}>
+          <Button aria-disabled={pending} variant='ghost' className="mt-2 w-full font-bold">
+            Login instead
+          </Button>
+        </Link>
+
       </div>
     </form>
   );
