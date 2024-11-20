@@ -11,11 +11,7 @@ import { IOrganization } from "@/server/action/organization"
 
 export function OrgSwitcher() {
     const { isMobile } = useSidebar()
-    const [activeOrg, setActiveOrg] = React.useState<IOrganization>({
-        _id: "",
-        name: "",
-        logo: "",
-    })
+    const [activeOrg, setActiveOrg] = React.useState<IOrganization>()
     const [orgs, setOrgs] = React.useState<IOrganization[]>([])
     React.useEffect(() => {
         const fetchData = async () => {
@@ -39,11 +35,11 @@ export function OrgSwitcher() {
                         >
                             <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
 
-                                <img src={activeOrg.logo ? activeOrg.logo : undefined} alt={activeOrg.name} width={40} height={40} className="border-none rounded-md" />
+                                <img src={activeOrg?.logo ? activeOrg.logo : undefined} width={40} height={40} className="border-none rounded-md" />
                             </div>
                             <div className="grid flex-1 text-left text-sm leading-tight">
                                 <span className="truncate font-semibold">
-                                    {activeOrg.name}
+                                    {activeOrg?.name}
                                 </span>
                                 {/* <span className="truncate text-xs">{activeOrg.plan}</span> */}
                             </div>
