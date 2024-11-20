@@ -42,7 +42,7 @@ export async function createUser(userData: ICreateUser): Promise<IUserResponse> 
     // Check if user already exists
     const existingUser = await User.findOne({ email: userData.email });
     if (existingUser) {
-      toast('User with this email already exists');
+      
       throw new Error('User with this email already exists');
     }
 

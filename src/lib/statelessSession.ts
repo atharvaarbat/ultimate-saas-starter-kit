@@ -1,4 +1,4 @@
-// lib/auth.ts
+
 import "server-only";
 import { SignJWT, jwtVerify, JWTPayload } from "jose";
 import { cookies } from "next/headers";
@@ -43,7 +43,7 @@ const cookie: CookieConfig = {
   duration: 24 * 60 * 60 * 1000, // 24 hours
 };
 
-export async function encrypt(payload: { userId: string }): Promise<string> {
+export async function encrypt(payload: { userId: string}): Promise<string> {
   return new SignJWT(payload)
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()

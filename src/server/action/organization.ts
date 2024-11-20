@@ -1,171 +1,198 @@
-import { Organization } from '@/server/schema/organization'; // Adjust import path as needed
-import mongoose from 'mongoose';
-import { connectToDatabase } from '@/lib/mongodb'; // Assume you have a database connection utility
+'use server'
 
-// Type definition for Organization input
-interface OrganizationInput {
-  name: string;
-  slug: string;
-  description?: string;
-  logo?: string;
-  website?: string;
-}
+import { Organization } from '@/server/schema/organization';
+import { connectToDatabase } from '@/lib/mongodb';
+import { Types } from 'mongoose';
+import { revalidatePath } from 'next/cache';
+import { Membership } from '../schema/memberships';
+import { createMembership } from './memberships';
+import { verifySession } from '@/lib/statelessSession';
+
+
 
 // Create a new organization
-export async function createOrganization(data: OrganizationInput) {
+export async function createOrganization(orgData: ICreateOrganization): Promise<IOrganizationResponse> {
   try {
-    // Ensure database connection
     await connectToDatabase();
-
-    // Create a new organization
-    const newOrganization = new Organization({
-      name: data.name,
-      slug: data.slug,
-      description: data.description || '',
-      logo: data.logo || '',
-      website: data.website || ''
+    const userId = (await verifySession()).userId;
+    // Check if organization with same name already exists
+    const existingOrg = await Organization.findOne({ 
+      name: { $regex: new RegExp(`^${orgData.name}$`, 'i') } 
     });
-
-    // Save the organization
-    const savedOrganization = await newOrganization.save();
     
-    return {
-      success: true,
-      data: savedOrganization.toObject(),
-      error: null
-    };
-  } catch (error: any) {
-    // Handle potential errors (e.g., duplicate slug)
-    return {
-      success: false,
-      data: null,
-      error: error.message || 'Failed to create organization'
-    };
-  }
-}
-
-// Get all organizations
-export async function getOrganizations() {
-  try {
-    // Ensure database connection
-    await connectToDatabase();
-
-    // Fetch all organizations
-    const organizations = await Organization.find().lean();
-    
-    return {
-      success: true,
-      data: organizations,
-      error: null
-    };
-  } catch (error: any) {
-    return {
-      success: false,
-      data: null,
-      error: error.message || 'Failed to fetch organizations'
-    };
-  }
-}
-
-// Get a single organization by slug
-export async function getOrganizationBySlug(slug: string) {
-  try {
-    // Ensure database connection
-    await connectToDatabase();
-
-    // Find organization by slug
-    const organization = await Organization.findOne({ slug }).lean();
-    
-    if (!organization) {
-      return {
-        success: false,
-        data: null,
-        error: 'Organization not found'
-      };
+    if (existingOrg) {
+      throw new Error('Organization with this name already exists');
     }
 
-    return {
-      success: true,
-      data: organization,
-      error: null
-    };
-  } catch (error: any) {
-    return {
-      success: false,
-      data: null,
-      error: error.message || 'Failed to fetch organization'
-    };
+
+
+    // Create organization
+    const organization = await Organization.create({
+      ...orgData,
+      logo: `https://api.dicebear.com/8.x/initials/svg?seed=${encodeURIComponent(orgData.name)}`
+    });
+    const membership = await createMembership({organizationId: organization._id, userId: userId, role: 'admin', status: 'active'});
+    revalidatePath('/organizations'); // Revalidate organizations list page
+    return JSON.parse(JSON.stringify(organization)) as IOrganizationResponse;
+  } catch (error) {
+    console.error('Create organization error:', error);
+    throw error;
   }
 }
 
-// Update an organization by slug
-export async function updateOrganization(slug: string, data: Partial<OrganizationInput>) {
+// Get organization by ID
+export async function getOrganizationById(orgId: string): Promise<IOrganizationResponse | null> {
   try {
-    // Ensure database connection
     await connectToDatabase();
 
-    // Update the organization
-    const updatedOrganization = await Organization.findOneAndUpdate(
-      { slug },
+    if (!Types.ObjectId.isValid(orgId)) {
+      throw new Error('Invalid organization ID');
+    }
+
+    const organization = await Organization.findById(orgId);
+    return organization ? (organization.toObject() as IOrganizationResponse) : null;
+  } catch (error) {
+    console.error('Get organization error:', error);
+    throw error;
+  }
+}
+
+// Get organization by slug
+export async function getOrganizationBySlug(slug: string): Promise<IOrganizationResponse | null> {
+  try {
+    await connectToDatabase();
+
+    const organization = await Organization.findOne({ slug });
+    return organization ? (organization.toObject() as IOrganizationResponse) : null;
+  } catch (error) {
+    console.error('Get organization by slug error:', error);
+    throw error;
+  }
+}
+
+// Update organization
+export async function updateOrganization(
+  orgId: string,
+  updateData: IUpdateOrganization
+): Promise<IOrganizationResponse | null> {
+  try {
+    await connectToDatabase();
+
+    if (!Types.ObjectId.isValid(orgId)) {
+      throw new Error('Invalid organization ID');
+    }
+
+    
+    
+
+    const organization = await Organization.findByIdAndUpdate(
+      orgId,
       { 
-        ...data,
+        ...updateData, 
+        
         updatedAt: new Date() 
       },
-      { 
-        new: true,  // Return the updated document
-        runValidators: true // Run model validations on update
-      }
-    ).lean();
+      { new: true }
+    );
 
-    if (!updatedOrganization) {
-      return {
-        success: false,
-        data: null,
-        error: 'Organization not found'
-      };
-    }
-
-    return {
-      success: true,
-      data: updatedOrganization,
-      error: null
-    };
-  } catch (error: any) {
-    return {
-      success: false,
-      data: null,
-      error: error.message || 'Failed to update organization'
-    };
+    revalidatePath(`/organizations/${organization?.slug}`); // Revalidate organization detail page
+    revalidatePath('/organizations'); // Revalidate organizations list page
+    return organization ? (organization.toObject() as IOrganizationResponse) : null;
+  } catch (error) {
+    console.error('Update organization error:', error);
+    throw error;
   }
 }
 
-// Delete an organization by slug
-export async function deleteOrganization(slug: string) {
+// Delete organization
+export async function deleteOrganization(orgId: string): Promise<boolean> {
   try {
-    // Ensure database connection
     await connectToDatabase();
 
-    // Delete the organization
-    const deletedOrganization = await Organization.findOneAndDelete({ slug }).lean();
+    if (!Types.ObjectId.isValid(orgId)) {
+      throw new Error('Invalid organization ID');
+    }
 
-    if (!deletedOrganization) {
-      return {
-        success: false,
-        data: null,
-        error: 'Organization not found'
+    const result = await Organization.findByIdAndDelete(orgId);
+    revalidatePath('/organizations'); // Revalidate organizations list page
+    return !!result;
+  } catch (error) {
+    console.error('Delete organization error:', error);
+    throw error;
+  }
+}
+
+// List organizations with pagination and search
+export async function listOrganizations(page = 1, limit = 10, search?: string) {
+  try {
+    await connectToDatabase();
+
+    const skip = (page - 1) * limit;
+    let query = {};
+
+    if (search) {
+      query = {
+        $or: [
+          { name: { $regex: search, $options: 'i' } },
+          { description: { $regex: search, $options: 'i' } },
+        ],
       };
     }
 
+    const [organizations, total] = await Promise.all([
+      Organization.find(query)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Organization.countDocuments(query),
+    ]);
+
     return {
-      success: true,
-      data: deletedOrganization,
-      error: null
+      organizations: organizations.map(org => org.toObject()) as IOrganizationResponse[],
+      total,
+      totalPages: Math.ceil(total / limit),
+      currentPage: page,
     };
-  } catch (error: any) {
-    return {
-      success: false,
-      data: null,
-      error: error.message || 'Failed to delete organization'
-    };
+  } catch (error) {
+    console.error('List organizations error:', error);
+    throw error;
   }
 }
+
+
+
+
+
+
+
+// Types
+export interface ICreateOrganization {
+    name: string;
+    description?: string;
+    logo?: string;
+    website?: string;
+  }
+  export interface IOrganization {
+    _id: string;
+    name: string;
+    description?: string;
+    logo?: string;
+    website?: string;
+  }
+  export interface IUpdateOrganization {
+    name?: string;
+    description?: string;
+    logo?: string;
+    website?: string;
+  }
+  
+  export interface IOrganizationResponse {
+    _id: Object;
+    name: string;
+    slug: string;
+    description?: string;
+    logo?: string;
+    website?: string;
+    createdAt: Date;
+    updatedAt: Date;
+  }

@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { 
   Card, 
   CardContent, 
@@ -76,8 +75,9 @@ export default function CreateOrganizationPage() {
     
     try {
       const result = await createOrganization(values);
-      
-      if (result.success) {
+      console.log(result);
+      if (result) {
+        localStorage.setItem('organization', JSON.stringify(result._id));
         toast({
           title: "Organization Created",
           description: `${values.name} has been successfully created.`,
@@ -89,7 +89,7 @@ export default function CreateOrganizationPage() {
       } else {
         toast({
           title: "Error",
-          description: result.error || "Failed to create organization",
+          description: "Failed to create organization",
           variant: "destructive"
         });
       }
@@ -116,7 +116,7 @@ export default function CreateOrganizationPage() {
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              {/* Organization Name */}
+              
               <FormField
                 control={form.control}
                 name="name"
@@ -139,7 +139,7 @@ export default function CreateOrganizationPage() {
                 )}
               />
 
-              {/* Slug */}
+              
               <FormField
                 control={form.control}
                 name="slug"
