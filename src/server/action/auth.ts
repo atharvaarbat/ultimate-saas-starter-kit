@@ -1,6 +1,6 @@
 "use server";
 import { LoginFormSchema, SignupFormSchema } from "@/server/action/zod";
-import { createSession, getSession } from "@/lib/statelessSession";
+import { createSession, deleteSession, getSession } from "@/lib/statelessSession";
 import { createUser, getUserByEmail, getUserById, verifyPassword } from "./user";
 import { toast } from "sonner";
 import { redirect } from "next/navigation";
@@ -131,5 +131,22 @@ export async function getCuurentUser() {
   } catch (error) {
     console.error("Get current user error:", error);
     throw error;
+  }
+}
+
+export async function logout() {
+  try {
+   
+    await deleteSession();
+    // redirect('/dashboard');
+  } catch (error) {
+    // Handle any unexpected errors
+    console.error("Logout error:", error);
+    return {
+      errors: null,
+      message: "An unexpected error occurred. Please try again.",
+    };
+  } finally {
+    redirect("/login");
   }
 }

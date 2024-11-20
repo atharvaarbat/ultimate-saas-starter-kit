@@ -28,7 +28,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { getCuurentUser } from "@/server/action/auth"
+import { getCuurentUser, logout } from "@/server/action/auth"
 import { useEffect, useState } from "react"
 import Link from "next/link"
 
@@ -54,12 +54,12 @@ export function NavUser() {
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               <Avatar className="h-8 w-8 rounded-lg">
-                <AvatarImage src={user.avatar ? user.avatar : undefined} alt={user.name} />
+                <AvatarImage src={user?.avatar ? user.avatar : undefined} alt={user?.name} />
                 <AvatarFallback className="rounded-lg">CN</AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-semibold">{user.name}</span>
-                <span className="truncate text-xs">{user.email}</span>
+                <span className="truncate font-semibold">{user?.name}</span>
+                <span className="truncate text-xs">{user?.email}</span>
               </div>
               <ChevronsUpDown className="ml-auto size-4" />
             </SidebarMenuButton>
@@ -96,7 +96,7 @@ export function NavUser() {
               <DropdownMenuItem><Bell />Notifications</DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem><LogOut />Log out
+            <DropdownMenuItem className="cursor-pointer" onClick={logout}><LogOut />Log out
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

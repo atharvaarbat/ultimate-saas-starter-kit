@@ -18,9 +18,13 @@ export function OrgSwitcher() {
             const allOrgs = await getOrganizationsCurrUser();
             setOrgs(allOrgs);
             const activeOrgId = localStorage.getItem("organization")?.replace(/"/g, "");
+            if (!activeOrgId) {
+                setActiveOrg(allOrgs[0]);
+                localStorage.setItem("organization", allOrgs[0]._id);
+            }
             const myactiveOrg = allOrgs.filter((org) => org._id === activeOrgId);
             setActiveOrg(myactiveOrg[0]);
-            console.log(allOrgs);
+
         }
         fetchData();
     }, [])
@@ -31,17 +35,17 @@ export function OrgSwitcher() {
                     <DropdownMenuTrigger asChild>
                         <SidebarMenuButton
                             size="lg"
-                            className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+                            className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground "
                         >
-                            <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+                            <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground outline-none">
 
-                                <img src={activeOrg?.logo ? activeOrg.logo : undefined} width={40} height={40} className="border-none rounded-md" />
+                                <img src={activeOrg?.logo ? activeOrg.logo : 'https://api.dicebear.com/8.x/initials/svg?seed=S%20O'} width={40} height={40} className="rounded" />
                             </div>
                             <div className="grid flex-1 text-left text-sm leading-tight">
                                 <span className="truncate font-semibold">
-                                    {activeOrg?.name}
+                                    {activeOrg?.name ? activeOrg.name : "Select Organization"}
                                 </span>
-                                {/* <span className="truncate text-xs">{activeOrg.plan}</span> */}
+
                             </div>
                             <ChevronsUpDown className="ml-auto" />
                         </SidebarMenuButton>
