@@ -1,78 +1,89 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
-import { verifySession } from '@/lib/statelessSession'; // Assuming this is where your verifySession function is
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+import { decrypt } from '@/lib/statelessSession'
+import { cookies } from 'next/headers'
+import { cookie } from '@/lib/statelessSession'
 
-// Add all public routes here
-const publicRoutes = [
+// Define open routes that don't require authentication
+const OPEN_PATHS = [
   '/login',
-  '/sign-up',
+  '/signup',
   '/forgot-password',
   '/reset-password',
-  '/verify-email',
-];
+  '/public', 
+  // Add any other public routes here
+]
 
-// Add routes that should redirect logged-in users (e.g., prevent logged-in users from accessing login page)
-const authRoutes = [
-  '/login',
-  '/sign-up',
-];
+// Function to check if a path is open
+function isPathOpen(path: string): boolean {
+  return OPEN_PATHS.some(openPath => 
+    path === openPath || 
+    path.startsWith(openPath + '/') ||
+    // Optional: add pattern matching if needed
+    path.match(new RegExp(`^${openPath.replace('*', '.*')}$`))
+  )
+}
 
 export async function middleware(request: NextRequest) {
+  const path = request.nextUrl.pathname
+
+  // Always allow API routes, static files, and internal Next.js routes
+  if (
+    path.startsWith('/_next') || 
+    path.startsWith('/api') || 
+    path.startsWith('/static') || 
+    path.startsWith('favicon.ico')
+  ) {
+    return NextResponse.next()
+  }
+
+  // Check if the path is open
+  if (isPathOpen(path)) {
+    return NextResponse.next()
+  }
+
+  // Check for valid session
   try {
-    // Get the pathname from the request
-    const path = request.nextUrl.pathname;
+    // Get session cookie
+    const sessionCookie = request.cookies.get(cookie.name)?.value
 
-    // Check if it's a public asset (like images, css, etc.)
-    if (
-      path.startsWith('/_next') || 
-      path.startsWith('/api') ||
-      path.startsWith('/static') ||
-      path.includes('.')
-    ) {
-      return NextResponse.next();
+    // If no session cookie exists, redirect to login
+    if (!sessionCookie) {
+      return redirectToLogin(request)
     }
 
-    // Verify the session
-    const { userId } = await verifySession();
-    const isAuthenticated = !!userId;
+    // Decrypt and verify session
+    const session = await decrypt(sessionCookie)
 
-    // Create URLs for redirection
-    const loginUrl = new URL('/login', request.url);
-    const homeUrl = new URL('/', request.url);
-    
-    // If the user is not authenticated and tries to access a protected route
-    if (!isAuthenticated && !publicRoutes.includes(path)) {
-      // Store the current URL to redirect back after login
-     
-      loginUrl.searchParams.set('callbackUrl', encodeURIComponent(request.url));
-      return NextResponse.redirect(loginUrl);
+    // If session is invalid or expired, redirect to login
+    if (!session?.userId) {
+      return redirectToLogin(request)
     }
 
-    // If the user is authenticated and tries to access auth routes (login, signup)
-    if (isAuthenticated && authRoutes.includes(path)) {
-      return NextResponse.redirect(homeUrl);
-    }
+    // Session is valid, allow access
+    return NextResponse.next()
 
-    // Allow the request to continue
-    return NextResponse.next();
   } catch (error) {
-    console.error('Middleware error:', error);
-    
-    // If there's an error verifying the session, redirect to login
-    const loginUrl = new URL('/login', request.url);
-    return NextResponse.redirect(loginUrl);
+    // Handle any errors during session verification
+    console.error('Middleware session verification error:', error)
+    return redirectToLogin(request)
   }
 }
 
-// Configure which routes should be handled by this middleware
+// Helper function to redirect to login
+function redirectToLogin(request: NextRequest) {
+  const loginUrl = new URL('/login', request.url)
+  
+  // Optional: Pass the original destination for post-login redirect
+  loginUrl.searchParams.set('callbackUrl', request.nextUrl.pathname)
+  
+  return NextResponse.redirect(loginUrl)
+}
+
+// Configure which routes the middleware should run on
 export const config = {
+  // This matcher ensures the middleware runs on all routes except specific paths
   matcher: [
-    /*
-     * Match all request paths except:
-     * 1. Prefixed with /api (API routes)
-     * 2. Prefixed with /_next (Next.js internals)
-     * 3. Containing a dot (static files, e.g. favicon.ico)
-     */
     '/((?!api|_next/static|_next/image|favicon.ico).*)',
   ],
-};
+}

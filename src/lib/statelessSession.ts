@@ -32,7 +32,7 @@ if (!secret) {
 const key = new TextEncoder().encode(secret);
 
 // Cookie configuration
-const cookie: CookieConfig = {
+export const cookie: CookieConfig = {
   name: "session",
   options: {
     httpOnly: true,
@@ -75,17 +75,33 @@ export async function createSession(userId: string): Promise<void> {
   // redirect("/dashboard");
 }
 
-export async function verifySession(): Promise<{ userId: string }> {
-  const sessionCookie = (await cookies()).get(cookie.name)?.value;
-  const session = await decrypt(sessionCookie);
+export async function verifySession() {
+  try {
+    const sessionCookie = (await cookies()).get(cookie.name)?.value;
+    
+    // If no session cookie exists, redirect to login
+    if (sessionCookie == undefined) {
+      return { redirect: '/login' };
+    }
 
-  if (!session?.userId) {
-    redirect("/login");
+    const session = await decrypt(sessionCookie);
+    
+    // If session is invalid or expired, redirect to login
+    if (!session?.userId) {
+      return { redirect: '/login' };
+    }
+
+    // Return user ID if session is valid
+    return { 
+      userId: session.userId,
+      redirect: null 
+    };
+  } catch (error) {
+    console.error('Session verification error:', error);
+    // Handle any decryption or unexpected errors
+    return { redirect: '/login' };
   }
-
-  return { userId: session.userId };
 }
-
 export async function deleteSession(): Promise<void> {
   (await cookies()).delete(cookie.name);
   redirect("/login");

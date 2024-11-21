@@ -8,6 +8,7 @@ import { Types } from 'mongoose';
 import { revalidatePath } from 'next/cache';
 import { verifySession } from '@/lib/statelessSession';
 import { IOrganization } from './organization';
+import { ToClientObj } from '@/lib/utils';
 
 // Types
 export interface ICreateMembership {
@@ -370,6 +371,72 @@ export async function listMemberships(
     };
   } catch (error) {
     console.error('List memberships error:', error);
+    throw error;
+  }
+}
+
+export async function getMembershipByOrgId(orgId: string) {
+  try {
+    await connectToDatabase();
+
+    if (!Types.ObjectId.isValid(orgId)) {
+      throw new Error('Invalid organization ID');
+    }
+
+    const memberships = await Membership.find({ organizationId: orgId });
+    const allMemberships  = memberships;
+    var members = [] as string[];
+    var owners = [] as string[];
+    var admins = [] as string[];
+    var memberIds = [] as string[];
+    var ownerIds = [] as string[];
+    var adminIds = [] as string[];
+    var allMemberIds = [] as string[];
+
+    allMemberships.forEach((m) => {
+      if (m.role === 'member') {
+        members.push(m);
+        memberIds.push(m.userId.toString());
+      } else if (m.role === 'owner') {
+        owners.push(m)
+        ownerIds.push(m.userId.toString());
+      } else {
+        admins.push(m);
+        adminIds.push(m.userId.toString());
+      }
+      allMemberIds.push(m.userId.toString());
+    });
+    return {allMemberships, members, owners, admins, memberIds, ownerIds, adminIds, allMemberIds};
+  } catch (error) {
+    console.error('Get membership by organization ID error:', error);
+    throw error;
+  }
+}
+
+
+
+export async function getMembersOfOrg(orgId: string) {
+  try {
+    await connectToDatabase();
+    const memberships = await Membership.find({ organizationId: orgId });
+    const fullMemberships = await Promise.all(
+      memberships.map(async (membership) => {
+        const user = await User.findOne({_id: membership.userId});
+        const userObj = {
+          name: user.name,
+          email: user.email,
+          avatar: user.avatar,
+        };
+        const membershipObj = membership.toObject();
+        return {
+          ...membershipObj,
+          userObj
+        };
+      })
+    );
+    return ToClientObj(fullMemberships);
+  }catch (error) {
+    console.error('Get members of organization error:', error);
     throw error;
   }
 }

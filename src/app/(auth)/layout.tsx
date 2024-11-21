@@ -34,10 +34,9 @@ export default function AuthenticationPage({ children }: { children: React.React
                     </div>
                     <div className="relative z-20 mt-auto">
                         <blockquote className="space-y-2">
-                            <p className="text-lg">
-                                &ldquo;In the shadows of the digital metropolis, where lines of code weave narratives like celluloid dreams, Next.js and MongoDB dance—a seamless ballet of server-side symphonies and data's whispered secrets, rendering reality faster than light, more fluid than memory.&rdquo;
+                            <p className="text-5xl font-bold text-muted-foreground">
+                                &ldquo;Any sufficiently advanced technology is indistinguishable from magic.&rdquo;
                             </p>
-                            <footer className="text-sm text-end">~Atharva Arbat</footer>
                         </blockquote>
                     </div>
                 </div>
