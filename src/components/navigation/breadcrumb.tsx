@@ -27,7 +27,9 @@ const BreadcrumbComp = () => {
     <Breadcrumb>
       <BreadcrumbList>
         <BreadcrumbItem>
-          <BreadcrumbLink href="/dashboard" className="text-accent-foreground"><Home size={18}/></BreadcrumbLink>
+          {/* <BreadcrumbLink href="/dashboard" className="text-accent-foreground"> */}
+          <Home size={18} onClick={() => window.location.href = "/"}/>
+          {/* </BreadcrumbLink> */}
         </BreadcrumbItem>
         {pathSegments.length > 0 && <BreadcrumbSeparator />}
         {pathSegments.map((segment, index) => {

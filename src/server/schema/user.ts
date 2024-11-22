@@ -22,6 +22,9 @@ const userSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    dob: {
+      type: Date,
+    },
     isEmailVerified: {
       type: Boolean,
       default: false,

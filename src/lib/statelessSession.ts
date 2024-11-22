@@ -104,6 +104,7 @@ export async function verifySession() {
 }
 export async function deleteSession(): Promise<void> {
   (await cookies()).delete(cookie.name);
+  (await cookies()).delete('activeOrganization');
   redirect("/login");
 }
 

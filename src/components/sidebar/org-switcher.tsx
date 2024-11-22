@@ -7,6 +7,7 @@ import { redirect } from "next/navigation"
 import { getOrganizationsCurrUser } from "@/server/action/memberships"
 import { IOrganization } from "@/server/action/organization"
 import { getCuurentUser } from "@/server/action/auth"
+import Cookies from 'js-cookie'
 
 // Fallback image generator function
 const getFallbackLogo = (name?: string) =>
@@ -21,9 +22,12 @@ export function OrgSwitcher() {
     // Memoized org selection handler
     const handleOrgSelect = React.useCallback((org: IOrganization) => {
         setActiveOrg(org)
-        localStorage.setItem("organization", JSON.stringify(org._id))
+       
+        Cookies.set('activeOrganization', JSON.stringify(org), { 
+            secure: true, 
+            sameSite: 'strict' 
+        })
     }, [])
-
     React.useEffect(() => {
         const fetchData = async () => {
             try {
@@ -32,32 +36,52 @@ export function OrgSwitcher() {
                 if (!session) {
                     setActiveOrg(null)
                     setOrgs([])
+                    Cookies.remove('activeOrganization')
                     return
                 }
+                
                 const allOrgs = await getOrganizationsCurrUser()
 
                 // Handle case with no organizations
                 if (allOrgs.length === 0) {
                     setOrgs([])
                     setActiveOrg(null)
+                    Cookies.remove('activeOrganization')
                     return
                 }
 
                 setOrgs(allOrgs)
+                
+                // Retrieve stored organization from cookie
+                const storedOrgCookie = Cookies.get('activeOrganization')
+                let selectedOrg: IOrganization
 
-                // Retrieve stored organization
-                const storedOrgId = localStorage.getItem("organization")?.replace(/"/g, "")
+                if (storedOrgCookie) {
+                    // Try to parse stored organization
+                    try {
+                        selectedOrg = JSON.parse(storedOrgCookie)
+                        // Validate if the stored org exists in current user's orgs
+                        const matchedOrg = allOrgs.find(org => org._id === selectedOrg._id)
+                        selectedOrg = matchedOrg || allOrgs[0]
+                    } catch {
+                        // Fallback to first org if cookie parsing fails
+                        selectedOrg = allOrgs[0]
+                    }
+                } else {
+                    // No stored org, use first from array
+                    selectedOrg = allOrgs[0]
+                }
 
-                // Find active org
-                const selectedOrg = storedOrgId
-                    ? allOrgs.find(org => org._id === storedOrgId)
-                    : allOrgs[0]
-
-                setActiveOrg(selectedOrg || null)
+                // Update active org and store in cookie
+                setActiveOrg(selectedOrg)
+                Cookies.set('activeOrganization', JSON.stringify(selectedOrg), { 
+                    secure: true, 
+                    sameSite: 'strict' 
+                })
             } catch (error) {
-                // console.error("Failed to fetch organizations:", error)
                 setOrgs([])
                 setActiveOrg(null)
+                Cookies.remove('activeOrganization')
             } finally {
                 setIsLoading(false)
             }
@@ -66,7 +90,7 @@ export function OrgSwitcher() {
         fetchData()
     }, [])
 
-    // Loading state
+   
     if (isLoading) {
         return (
             <SidebarMenu>

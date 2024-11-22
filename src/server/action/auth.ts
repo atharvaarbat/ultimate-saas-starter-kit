@@ -2,28 +2,9 @@
 import { LoginFormSchema, SignupFormSchema } from "@/server/action/zod";
 import { createSession, deleteSession, getSession } from "@/lib/statelessSession";
 import { createUser, getUserByEmail, getUserById, verifyPassword } from "./user";
-import { toast } from "sonner";
 import { redirect } from "next/navigation";
 
-// export async function signup(state: any, formData: FormData) {
-//   // 1. Validate form fields
-//   console.log(formData);
-//   const validateResult = SignupFormSchema.safeParse({
-//     name: formData.get("name"),
-//     email: formData.get("email"),
-//     password: formData.get("password"),
-//   });
-//   if (!validateResult.success)
-//     return {
-//       errors: validateResult.error.flatten().fieldErrors,
-//     };
 
-//   const { name, email, password } = validateResult.data;
-//   // 2. Create user
-//   const newUser = await createUser({ name, email, password });
-//   // 3. Create session
-//   await createSession(newUser._id);
-// }
 export async function signup(state: any, formData: FormData) {
   // console.log(formData);
   // 1. Validate form fields
@@ -104,7 +85,7 @@ export async function login(state: any, formData: FormData) {
         message: "Invalid email or password",
       };
     }
-    console.log(user);
+    
 
     // 3. Create session and redirect
     await createSession(user._id);
@@ -125,7 +106,10 @@ export async function login(state: any, formData: FormData) {
 export async function getCuurentUser() {
   try {
     const session = await getSession();
-    if (!session) return null;
+    if (!session) {
+      
+      return null;
+    };
     const user = await getUserById(session);
     return JSON.parse(JSON.stringify(user));
   } catch (error) {
@@ -138,7 +122,7 @@ export async function logout() {
   try {
    
     await deleteSession();
-    // redirect('/dashboard');
+    
   } catch (error) {
     // Handle any unexpected errors
     console.error("Logout error:", error);

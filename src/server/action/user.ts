@@ -1,12 +1,14 @@
 // app/actions/users.ts
-'use server'
+"use server";
 
-import { User } from '@/server/schema/user';
-import { connectToDatabase } from '@/lib/mongodb';
-import { Types } from 'mongoose';
-import bcrypt from 'bcrypt';
-import { revalidatePath } from 'next/cache';
-import { toast } from 'sonner';
+import { User } from "@/server/schema/user";
+import { connectToDatabase } from "@/lib/mongodb";
+import { Types } from "mongoose";
+import bcrypt from "bcrypt";
+import { revalidatePath } from "next/cache";
+import { toast } from "sonner";
+import { verifySession } from "@/lib/statelessSession";
+import { ToClientObj } from "@/lib/utils";
 
 // Types
 export interface ICreateUser {
@@ -32,18 +34,20 @@ export interface IUserResponse {
   isEmailVerified: boolean;
   createdAt: Date;
   updatedAt: Date;
+  dob: String;
 }
 
 // Create a new user
-export async function createUser(userData: ICreateUser): Promise<IUserResponse> {
+export async function createUser(
+  userData: ICreateUser
+): Promise<IUserResponse> {
   try {
     await connectToDatabase();
 
     // Check if user already exists
     const existingUser = await User.findOne({ email: userData.email });
     if (existingUser) {
-      
-      throw new Error('User with this email already exists');
+      throw new Error("User with this email already exists");
     }
 
     // Hash password
@@ -56,40 +60,60 @@ export async function createUser(userData: ICreateUser): Promise<IUserResponse> 
     });
 
     const { password, ...userWithoutPassword } = user.toObject();
-    revalidatePath('/users'); // Revalidate users list page
+    revalidatePath("/users"); // Revalidate users list page
     return userWithoutPassword as IUserResponse;
   } catch (error) {
-    console.error('Create user error:', error);
+    console.error("Create user error:", error);
     throw error;
   }
 }
 
 // Get user by ID
-export async function getUserById(userId: string): Promise<IUserResponse | null> {
+export async function getUserById(
+  userId: string
+): Promise<IUserResponse | null> {
   try {
     await connectToDatabase();
 
     if (!Types.ObjectId.isValid(userId)) {
-      throw new Error('Invalid user ID');
+      throw new Error("Invalid user ID");
     }
 
-    const user = await User.findById(userId).select('-password');
+    const user = await User.findById(userId).select("-password");
     return user ? (user.toObject() as IUserResponse) : null;
   } catch (error) {
-    console.error('Get user error:', error);
+    console.error("Get user error:", error);
     throw error;
   }
 }
 
+export async function getCurrUser() {
+  try {
+    await connectToDatabase();
+    const userId = (await verifySession()).userId;
+
+    if (!userId) {
+      console.error("Invalid user ID:", userId);
+      return null;
+    }
+    const user = await User.findById(userId).select("-password");
+    return user ? ToClientObj(user)  : null;
+  } catch (error) {
+    console.error("Get user error:", error);
+    throw error;
+  }
+}
 // Get user by email
-export async function getUserByEmail(email: string): Promise<IUserResponse | null> {
+export async function getUserByEmail(
+  email: string
+): Promise<IUserResponse | null> {
   try {
     await connectToDatabase();
 
-    const user = await User.findOne({ email }).select('-password');
+    const user = await User.findOne({ email }).select("-password");
     return user ? (user.toObject() as IUserResponse) : null;
   } catch (error) {
-    console.error('Get user by email error:', error);
+    console.error("Get user by email error:", error);
     throw error;
   }
 }
@@ -103,7 +127,7 @@ export async function updateUser(
     await connectToDatabase();
 
     if (!Types.ObjectId.isValid(userId)) {
-      throw new Error('Invalid user ID');
+      throw new Error("Invalid user ID");
     }
 
     // If password is being updated, hash it
@@ -118,7 +142,7 @@ export async function updateUser(
         _id: { $ne: userId },
       });
       if (existingUser) {
-        throw new Error('Email already in use');
+        throw new Error("Email already in use");
       }
     }
 
@@ -126,13 +150,13 @@ export async function updateUser(
       userId,
       { ...updateData, updatedAt: new Date() },
       { new: true }
-    ).select('-password');
+    ).select("-password");
 
     revalidatePath(`/users/${userId}`); // Revalidate user detail page
-    revalidatePath('/users'); // Revalidate users list page
+    revalidatePath("/users"); // Revalidate users list page
     return user ? (user.toObject() as IUserResponse) : null;
   } catch (error) {
-    console.error('Update user error:', error);
+    console.error("Update user error:", error);
     throw error;
   }
 }
@@ -143,14 +167,14 @@ export async function deleteUser(userId: string): Promise<boolean> {
     await connectToDatabase();
 
     if (!Types.ObjectId.isValid(userId)) {
-      throw new Error('Invalid user ID');
+      throw new Error("Invalid user ID");
     }
 
     const result = await User.findByIdAndDelete(userId);
-    revalidatePath('/users'); // Revalidate users list page
+    revalidatePath("/users"); // Revalidate users list page
     return !!result;
   } catch (error) {
-    console.error('Delete user error:', error);
+    console.error("Delete user error:", error);
     throw error;
   }
 }
@@ -166,15 +190,15 @@ export async function listUsers(page = 1, limit = 10, search?: string) {
     if (search) {
       query = {
         $or: [
-          { name: { $regex: search, $options: 'i' } },
-          { email: { $regex: search, $options: 'i' } },
+          { name: { $regex: search, $options: "i" } },
+          { email: { $regex: search, $options: "i" } },
         ],
       };
     }
 
     const [users, total] = await Promise.all([
       User.find(query)
-        .select('-password')
+        .select("-password")
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit),
@@ -182,13 +206,13 @@ export async function listUsers(page = 1, limit = 10, search?: string) {
     ]);
 
     return {
-      users: users.map(user => user.toObject()) as IUserResponse[],
+      users: users.map((user) => user.toObject()) as IUserResponse[],
       total,
       totalPages: Math.ceil(total / limit),
       currentPage: page,
     };
   } catch (error) {
-    console.error('List users error:', error);
+    console.error("List users error:", error);
     throw error;
   }
 }
@@ -210,7 +234,7 @@ export async function verifyPassword(
     const { password: _, ...userWithoutPassword } = user.toObject();
     return userWithoutPassword as IUserResponse;
   } catch (error) {
-    console.error('Verify password error:', error);
+    console.error("Verify password error:", error);
     throw error;
   }
 }
@@ -221,17 +245,17 @@ export async function updateLastLogin(userId: string): Promise<void> {
     await connectToDatabase();
 
     if (!Types.ObjectId.isValid(userId)) {
-      throw new Error('Invalid user ID');
+      throw new Error("Invalid user ID");
     }
 
     await User.findByIdAndUpdate(userId, {
       lastLogin: new Date(),
       updatedAt: new Date(),
     });
-    
+
     revalidatePath(`/users/${userId}`);
   } catch (error) {
-    console.error('Update last login error:', error);
+    console.error("Update last login error:", error);
     throw error;
   }
 }

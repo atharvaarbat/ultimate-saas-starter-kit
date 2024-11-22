@@ -39,7 +39,7 @@ export async function createOrganization(
     const membership = await createMembership({
       organizationId: organization._id,
       userId: userId,
-      role: "admin",
+      role: "owner",
       status: "active",
     });
     revalidatePath("/organizations"); // Revalidate organizations list page

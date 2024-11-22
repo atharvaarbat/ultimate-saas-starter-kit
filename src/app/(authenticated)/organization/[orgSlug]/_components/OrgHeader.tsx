@@ -62,17 +62,13 @@ export const OrganizationHeader: React.FC<OrganizationHeaderProps> = ({
             </div>
             <div className="flex space-x-2">
                 {(userRole === 'owner' || userRole === 'admin') && (
-                    <div>
                         <Button
                             variant="outline"
-
                             onClick={onEdit}
                         >
                             Edit
                         </Button>
-                        <InviteMemberModal orgId={organization._id} />
-                    </div>
-
+                        
                 )}
                 {userRole === 'owner' && (
                     <Button
@@ -83,6 +79,7 @@ export const OrganizationHeader: React.FC<OrganizationHeaderProps> = ({
                         <Trash2 className="w-5 h-5" />
                     </Button>
                 )}
+                <InviteMemberModal orgId={organization._id} />
             </div>
         </div>
     );
