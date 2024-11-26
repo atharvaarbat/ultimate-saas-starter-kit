@@ -47,6 +47,10 @@ cd ultimate-saas-starter-kit
 ```bash
 npm install
 ```
+Note: There might be some dependency conflicts so try this
+```bash
+npm install --force
+```
 
 3. Set up your environment variables:
 ```bash
